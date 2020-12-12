@@ -1,0 +1,3 @@
+[CACHET]
+endpoint=https://status.myserver.ly/api/v1
+api_token=somesecretstring
