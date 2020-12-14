@@ -45,10 +45,11 @@ def load_config():
 @main.command(help='Create Cachet Incident')
 @click.argument('component_id')
 @click.argument('severity')
-@click.argument('subcomponent_name')
-def create(component_id, severity, subcomponent_name):
+@click.argument('title')
+@click.argument('message')
+def create(component_id, severity, title, message):
     component = CachetComponent(component_id)
-    component.create_incident(severity, subcomponent_name)
+    component.create_incident(severity, title, message)
     
 
 @main.command(help='Update Cachet Incident')
@@ -97,21 +98,23 @@ class CachetComponent(object):
         except:
             return []
 
-    def create_incident(self, severity, subcomponent_name):
+    def create_incident(self, severity, title, message):
         # get component group
+        component_name = self.client.components.get(component_id=self.component_id).name
+        component_description = self.client.components.get(component_id=self.component_id).description
         component_group_id = self.client.components.get(component_id=self.component_id).group_id
         component_group_name = self.client.component_groups.get(group_id=component_group_id).name
+        title = title.replace('[COMPONENT_NAME]', component_name)
+        title = title.replace('[COMPONENT_GROUP]', component_group_name)
+        message = message.replace('[COMPONENT_NAME]', component_name)
+        message = message.replace('[COMPONENT_GROUP]', component_group_name)
+        message = message.replace('[COMPONENT_DESCRIPTION]', component_description)
         self.client.incidents.create(
             status=enums.INCIDENT_INVESTIGATING,
             component_id=self.component_id,
             component_status=severity,
-            name = 'Incident affecting %s %s' % (component_group_name, subcomponent_name),
-            message = '''
-Our team is aware of an issue affecting **%s** component (`%s`) in **%s**. 
-We are currently investigating the cause of the issue.
-
-The status of the incident will be updated as soon as more information is available.
-            ''' % (component_group_name, subcomponent_name, self.client.components.get(component_id=self.component_id).description)
+            name = title,
+            message = message
         )
 
     def acknowledge_incident(self, update_message=''):
@@ -136,4 +139,3 @@ The status of the incident will be updated as soon as more information is availa
 
 if __name__ == '__main__':
     main()
-
